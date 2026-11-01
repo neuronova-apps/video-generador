@@ -1,0 +1,3 @@
+import test from'node:test';import assert from'node:assert/strict';import{readFileSync}from'node:fs';import{validateStoryboard}from'../apps/editor-web/storyboard-model.js';
+test('fixture audiovisual tiene duraciones coherentes',()=>{const f=JSON.parse(readFileSync('examples/storyboard-piloto/storyboard.json','utf8'));assert.equal(validateStoryboard(f),f);assert.equal(f.scenes.reduce((s,x)=>s+x.duration,0),10)});
+test('compilador exige aprobación',()=>{const s=readFileSync('scripts/build-storyboard-composition.mjs','utf8');assert.match(s,/approved-by-user/);assert.match(s,/data-no-timeline/);});
