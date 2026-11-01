@@ -1,0 +1,4 @@
+# Render de storyboard - laboratorio local
+Arranque local con Node 22+: definir RENDER_API_TOKEN (mínimo 32 caracteres) y ENABLE_STORYBOARD_RENDER=true, luego `node apps/render-api/storyboard-server.mjs`. Escucha únicamente 127.0.0.1:8789. La interfaz necesita el token para realizar solicitudes: **no utilizar una clave real de producción** ni publicar la interfaz con ese token.
+API: POST /api/storyboard/render para JSON aprobado, GET /api/storyboard/jobs/{id} y GET /api/storyboard/jobs/{id}/download. Procesa una solicitud simultánea. Se guardan resultados bajo output/storyboard-jobs.
+Este prototipo no puede exponerse a Internet: faltan control de cuotas y usuarios, seguridad de medios, persistencia de colas, expiración y eliminación programada. El token en cliente sería inseguro en hosting público; solo se admite laboratorio local.
