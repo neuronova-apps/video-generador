@@ -20,7 +20,7 @@ jobs:
       - name: Preparar archivos estáticos
         run: |
           mkdir -p dist/editor
-          cp apps/editor-web/index.html apps/editor-web/styles.css apps/editor-web/editor.js apps/editor-web/model.js apps/editor-web/request.js apps/editor-web/request-model.js apps/editor-web/request.css dist/editor/
+          cp apps/editor-web/index.html apps/editor-web/styles.css apps/editor-web/editor.js apps/editor-web/model.js apps/editor-web/request.js apps/editor-web/request-model.js apps/editor-web/request.css apps/editor-web/storyboard.js apps/editor-web/storyboard-model.js dist/editor/
       - uses: actions/upload-artifact@v4
         with:
           name: editor-web-preview
