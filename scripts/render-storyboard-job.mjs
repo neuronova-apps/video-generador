@@ -9,7 +9,13 @@ await mkdir(out,{recursive:true});const id=randomUUID();const working=await mkdt
 const save=async()=>writeFile(jobFile,JSON.stringify(state,null,2));await save();
 const execute=(command,args,cwd,timeout=180000)=>new Promise((ok,fail)=>{const child=spawn(command,args,{cwd,stdio:['ignore','pipe','pipe'],env:{...process.env,CI:'true'}});let logs='';const timer=setTimeout(()=>child.kill('SIGKILL'),timeout);for(const p of [child.stdout,child.stderr])p.on('data',d=>{logs=(logs+d.toString()).slice(-5000)});child.on('error',e=>{clearTimeout(timer);fail(e)});child.on('close',code=>{clearTimeout(timer);code===0?ok(logs):fail(Error(command+' exit '+code+': '+logs.slice(-1500)))})});
 const root=resolve(import.meta.dirname,'..');try{state={...state,state:'running',startedAt:now()};await save();await execute(process.execPath,[join(root,'scripts/build-storyboard-composition.mjs'),source,working],root);
-const bin=join(root,'node_modules/.bin/hyperframes');await execute(bin,['lint'],working);await execute(bin,['render'],working);
+const packagePath=join(root,'node_modules/hyperframes/package.json');
+const hyperframesPackage=JSON.parse(await readFile(packagePath,'utf8'));
+const entry=typeof hyperframesPackage.bin==='string'?hyperframesPackage.bin:hyperframesPackage.bin?.hyperframes;
+if(typeof entry!=='string'||!entry)throw Error('HyperFrames no declara ejecutable CLI');
+const cli=resolve(root,'node_modules/hyperframes',entry);
+await execute(process.execPath,[cli,'lint'],working);
+await execute(process.execPath,[cli,'render'],working);
 const files=await readdir(working,{recursive:true});const video=files.find(x=>x.endsWith('.mp4'));if(!video)throw Error('No se encontró video MP4');
 const src=join(working,video),dst=join(out,id+'.mp4');const probe=await execute('ffprobe',['-v','error','-show_entries','format=duration:stream=codec_type,width,height','-of','json',src],working);const info=JSON.parse(probe);const v=info.streams.find(x=>x.codec_type==='video');if(!v||v.width!==1280||v.height!==720||Math.abs(Number(info.format.duration)-story.duration)>.6)throw Error('FFprobe no valida el video');
 await copyFile(src,dst);state={...state,state:'completed',finishedAt:now(),video:dst,duration:Number(info.format.duration)};await save();console.log(JSON.stringify(state));
