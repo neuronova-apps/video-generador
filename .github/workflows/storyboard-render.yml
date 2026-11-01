@@ -41,6 +41,15 @@ jobs:
           if(!track||track.width!==1280||track.height!==720||Math.abs(Number(v.format.duration)-10)>.5)process.exit(1);
           console.log('MP4 conforme:',v.format.duration,'s');
           NODE
+      - name: Verificar ausencia de escenas negras
+        run: |
+          F=$(find examples/storyboard-piloto/render -type f -name '*.mp4' | head -n 1)
+          ffmpeg -hide_banner -i "$F" -vf "blackdetect=d=0.5:pix_th=0.10:pic_th=0.98" -an -f null - 2> blackdetect.log
+          if grep -q "black_start:" blackdetect.log; then
+            cat blackdetect.log
+            echo "ERROR: se detectó una escena negra sostenida"
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: piloto-storyboard-7-5
