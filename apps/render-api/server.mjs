@@ -1,0 +1,24 @@
+import http from 'node:http';
+import {spawn} from 'node:child_process';
+import {randomUUID,timingSafeEqual} from 'node:crypto';
+import {mkdtemp,readFile,readdir,rm,stat} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join,resolve,relative,sep} from 'node:path';
+const port=Number(process.env.PORT||8787);
+const token=process.env.RENDER_API_TOKEN||'';
+const enabled=process.env.ENABLE_RENDER_JOBS==='true';
+const origin=process.env.ALLOWED_ORIGIN||'';
+if(!token||token.length<32)throw Error('RENDER_API_TOKEN de 32 o más caracteres requerido');
+if(!Number.isInteger(port)||port<1||port>65535)throw Error('Puerto inválido');
+const projectRoot=resolve(import.meta.dirname,'../..');
+const pilot=join(projectRoot,'examples/video-piloto');
+const jobs=new Map();let active=false;
+const response=(res,code,data)=>{res.writeHead(code,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...(origin?{'Access-Control-Allow-Origin':origin,'Vary':'Origin'}:{})});res.end(JSON.stringify(data));};
+const authorized=req=>{const value=req.headers.authorization||'';const supplied=value.startsWith('Bearer ')?value.slice(7):'';const a=Buffer.from(supplied),b=Buffer.from(token);return a.length===b.length&&timingSafeEqual(a,b);};
+const scan=async(root,depth=0)=>{if(depth>5)return [];let out=[];for(const e of await readdir(root,{withFileTypes:true})){const p=join(root,e.name);if(e.isDirectory())out.push(...await scan(p,depth+1));else if(e.isFile()&&p.endsWith('.mp4'))out.push(p);}return out;};
+function run(job){active=true;job.state='running';job.startedAt=new Date().toISOString();const cp=spawn(join(projectRoot,'node_modules/.bin/hyperframes'),['render'],{cwd:pilot,stdio:['ignore','pipe','pipe'],env:{...process.env,CI:'true'}});
+let logs='';for(const stream of [cp.stdout,cp.stderr])stream.on('data',c=>{logs=(logs+c.toString()).slice(-12000);});
+const timeout=setTimeout(()=>cp.kill('SIGKILL'),180000);cp.on('error',e=>{job.state='failed';job.error=String(e);active=false;clearTimeout(timeout);});
+cp.on('close',async code=>{clearTimeout(timeout);try{if(job.state==='failed')return;if(code!==0)throw Error('Render finalizó con código '+code+': '+logs.slice(-600));const found=await scan(pilot);if(!found.length)throw Error('No se encontró MP4');found.sort((a,b)=>a.localeCompare(b));const f=found.at(-1);const metadata=await stat(f);if(metadata.size<1024)throw Error('MP4 vacío');job.state='completed';job.file=f;job.bytes=metadata.size;}catch(e){job.state='failed';job.error=String(e);}finally{active=false;job.finishedAt=new Date().toISOString();}});}
+const server=http.createServer((req,res)=>{(async()=>{if(req.url==='/health'&&req.method==='GET')return response(res,200,{ok:true,renderEnabled:enabled});if(!authorized(req))return response(res,401,{error:'unauthorized'});if(req.headers.origin&&req.headers.origin!==origin)return response(res,403,{error:'origin_denied'});if(req.method==='POST'&&req.url==='/api/render'){if(!enabled)return response(res,503,{error:'render_disabled'});if(active)return response(res,429,{error:'render_busy'});const id=randomUUID();const job={id,state:'queued',kind:'fixed-pilot',createdAt:new Date().toISOString()};jobs.set(id,job);run(job);return response(res,202,{id,state:job.state});}const m=/^\/api\/jobs\/([a-f0-9-]+)(\/download)?$/.exec(req.url||'');if(m&&req.method==='GET'){const job=jobs.get(m[1]);if(!job)return response(res,404,{error:'not_found'});if(!m[2])return response(res,200,{id:job.id,state:job.state,error:job.error||null,bytes:job.bytes||null});if(job.state!=='completed')return response(res,409,{error:'not_ready'});const f=resolve(job.file);const rel=relative(pilot,f);if(rel.startsWith('..')||rel.startsWith(sep))return response(res,500,{error:'invalid_path'});const data=await readFile(f);res.writeHead(200,{'Content-Type':'video/mp4','Content-Disposition':'attachment; filename="nn-piloto.mp4"','Content-Length':data.length,'Cache-Control':'no-store'});res.end(data);return;}response(res,404,{error:'not_found'});})().catch(e=>response(res,500,{error:'internal_error'}));});
+server.requestTimeout=10000;server.listen(port,'127.0.0.1',()=>console.log('Render API listening on localhost:'+port));
