@@ -1,9 +1,11 @@
-name: Render storyboard fase 7.5
+name: Validación audiovisual compositor 8.0
 on:
   push:
     branches: [develop]
     paths:
       - 'scripts/build-storyboard-composition.mjs'
+      - 'scripts/visual-compositor-v8.mjs'
+      - 'tests/visual-compositor-v8.test.mjs'
       - 'examples/storyboard-piloto/**'
       - '.github/workflows/storyboard-render.yml'
   workflow_dispatch:
@@ -22,6 +24,10 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npm test
       - run: node scripts/build-storyboard-composition.mjs examples/storyboard-piloto/storyboard.json examples/storyboard-piloto/render
+      - name: Verificar compositor visual 8.0
+        run: |
+          grep -q 'browser-shell' examples/storyboard-piloto/render/index.html || { echo 'Sin estructura visual del compositor'; exit 1; }
+          grep -q 'feature-visual' examples/storyboard-piloto/render/index.html || { echo 'Sin composiciones gráficas diferenciadas'; exit 1; }
       - name: Validación HyperFrames
         working-directory: examples/storyboard-piloto/render
         run: ../../../node_modules/.bin/hyperframes lint
@@ -50,6 +56,19 @@ jobs:
             echo "ERROR: se detectó una escena negra sostenida"
             exit 1
           fi
+      - name: Generar imágenes de inspección visual
+        run: |
+          F=$(find examples/storyboard-piloto/render -type f -name '*.mp4' | head -n 1)
+          mkdir -p output/revision-visual
+          ffmpeg -hide_banner -loglevel error -ss 2 -i "$F" -frames:v 1 -y output/revision-visual/escena-1.jpg
+          ffmpeg -hide_banner -loglevel error -ss 7 -i "$F" -frames:v 1 -y output/revision-visual/escena-2.jpg
+          test -s output/revision-visual/escena-1.jpg
+          test -s output/revision-visual/escena-2.jpg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: inspeccion-visual-compositor-8
+          path: output/revision-visual/
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: piloto-storyboard-7-5
