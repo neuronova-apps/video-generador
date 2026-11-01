@@ -1,0 +1,16 @@
+import {spawn} from 'node:child_process';
+import {mkdtemp,readFile,writeFile,mkdir,readdir,copyFile,rm} from 'node:fs/promises';
+import {join,resolve} from 'node:path';import {tmpdir} from 'node:os';import {randomUUID} from 'node:crypto';
+import {validateStoryboard} from '../apps/editor-web/storyboard-model.js';
+const [input,destination]=process.argv.slice(2);if(!input||!destination)throw Error('Uso: node scripts/render-storyboard-job.mjs storyboard.json carpeta-resultados');
+const source=resolve(input),out=resolve(destination);const story=JSON.parse(await readFile(source,'utf8'));validateStoryboard(story);
+if(story.approval!=='approved-by-user'||!story.sourceEvidence)throw Error('Se requiere storyboard aprobado con evidencia');
+await mkdir(out,{recursive:true});const id=randomUUID();const working=await mkdtemp(join(tmpdir(),'nn-render-'));const jobFile=join(out,id+'.json');const now=()=>new Date().toISOString();let state={id,source,createdAt:now(),state:'queued',attempt:1};
+const save=async()=>writeFile(jobFile,JSON.stringify(state,null,2));await save();
+const execute=(command,args,cwd,timeout=180000)=>new Promise((ok,fail)=>{const child=spawn(command,args,{cwd,stdio:['ignore','pipe','pipe'],env:{...process.env,CI:'true'}});let logs='';const timer=setTimeout(()=>child.kill('SIGKILL'),timeout);for(const p of [child.stdout,child.stderr])p.on('data',d=>{logs=(logs+d.toString()).slice(-5000)});child.on('error',e=>{clearTimeout(timer);fail(e)});child.on('close',code=>{clearTimeout(timer);code===0?ok(logs):fail(Error(command+' exit '+code+': '+logs.slice(-1500)))})});
+const root=resolve(import.meta.dirname,'..');try{state={...state,state:'running',startedAt:now()};await save();await execute(process.execPath,[join(root,'scripts/build-storyboard-composition.mjs'),source,working],root);
+const bin=join(root,'node_modules/.bin/hyperframes');await execute(bin,['lint'],working);await execute(bin,['render'],working);
+const files=await readdir(working,{recursive:true});const video=files.find(x=>x.endsWith('.mp4'));if(!video)throw Error('No se encontró video MP4');
+const src=join(working,video),dst=join(out,id+'.mp4');const probe=await execute('ffprobe',['-v','error','-show_entries','format=duration:stream=codec_type,width,height','-of','json',src],working);const info=JSON.parse(probe);const v=info.streams.find(x=>x.codec_type==='video');if(!v||v.width!==1280||v.height!==720||Math.abs(Number(info.format.duration)-story.duration)>.6)throw Error('FFprobe no valida el video');
+await copyFile(src,dst);state={...state,state:'completed',finishedAt:now(),video:dst,duration:Number(info.format.duration)};await save();console.log(JSON.stringify(state));
+}catch(e){state={...state,state:'failed',finishedAt:now(),error:String(e)};await save();process.exitCode=1;console.error(e)}finally{await rm(working,{recursive:true,force:true})}
