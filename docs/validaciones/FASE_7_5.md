@@ -1,0 +1,5 @@
+# Fase 7.5 - Storyboard a HyperFrames
+Estado: integración piloto implementada, validación de render pendiente.
+El script build-storyboard-composition.mjs valida storyboard JSON, exige aprobación registrada y fuente documentada, crea HTML con escenas temporizadas y manifiesto de procesamiento. El workflow storyboard-render.yml prueba lint, render y FFprobe y publica el MP4 como artefacto únicamente si cumple la verificación.
+**Alcance real:** piloto de texto y títulos, no incluye voz sintetizada, imágenes automáticas, efectos avanzados o audio. Los textos de narración se muestran en pantalla, no se convierten en sonido. La fixture es sintética y no constituye aprobación de un usuario real.
+Faltan: integración de carga directa del JSON desde editor al servicio; assets, clips, música, subtítulos y exportación de formatos alternativos; controles de seguridad y validación humana. No declarar 7.5 aprobada integralmente sin esos elementos. La fase siguiente prevista es 7.6, condicionada a cerrar estos bloques audiovisuales.
