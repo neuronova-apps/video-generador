@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video Generador NN - Piloto</title><style>
+*{box-sizing:border-box}body{margin:0;background:#090d19;color:white;font-family:Arial,Helvetica,sans-serif}
+#stage{position:relative;width:1280px;height:720px;overflow:hidden;background:radial-gradient(circle at 70% 35%,#25366c,#090d19 68%)}
+.scene{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:95px}
+h1{font-size:76px;line-height:1.08;letter-spacing:-2px;margin:0 0 22px}p{font-size:30px;opacity:.9;margin:0}.accent{color:#7dd3fc}.brand{font-size:21px;letter-spacing:5px;text-transform:uppercase;color:#cbd5e1;margin-bottom:28px}
+.orb{position:absolute;border:3px solid #38bdf8;border-radius:50%;width:260px;height:260px;right:-90px;top:-80px;opacity:.25}
+</style></head><body>
+<div id="stage" data-composition-id="nn-piloto" data-start="0" data-duration="15" data-width="1280" data-height="720">
+<div class="orb"></div>
+<section id="s1" class="scene" data-start="0" data-duration="5" data-track-index="0"><div class="brand">NeuroNova Apps</div><h1>Video <span class="accent">Generador</span></h1><p>Creación audiovisual independiente</p></section>
+<section id="s2" class="scene" data-start="5" data-duration="5" data-track-index="0"><div class="brand">HyperFrames</div><h1>Escenas y <span class="accent">movimiento</span></h1><p>Composiciones HTML para video</p></section>
+<section id="s3" class="scene" data-start="10" data-duration="5" data-track-index="0"><div class="brand">Piloto técnico</div><h1>Preparados para <span class="accent">crear</span></h1><p>15 segundos • 1280 × 720</p></section>
+</div><script>
+// Animación determinista basada en tiempo de la composición: no usa reloj real.
+const scenes=[...document.querySelectorAll('.scene')];
+function seek(t){for(let i=0;i<scenes.length;i++){const start=i*5;const x=t-start;const visible=x>=0&&x<5;const opacity=Math.max(0,Math.min(1,x/.65,(5-x)/.65));scenes[i].style.display=visible?'flex':'none';scenes[i].style.opacity=visible?String(opacity):'0';scenes[i].style.transform=`translateY(${visible?(1-Math.min(1,x/.8))*30:0}px)`;}}
+window.__seekVideo=seek;
+seek(0);
+</script></body></html>
