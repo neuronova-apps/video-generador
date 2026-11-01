@@ -15,3 +15,8 @@ Cambios en `develop`, revisión antes de fusionar a `main`. Las fases que incluy
 
 ## Próxima fase
 Fase 1: añadir HyperFrames con versión fijada y lockfile, detectar FFmpeg/FFprobe, crear composición piloto de 15 segundos, ejecutar lint/preview/render y registrar metadatos del MP4 mediante FFprobe.
+
+## Actualización de orientación - fase 7.0
+El producto ahora apunta a generar videos a partir de instrucciones, sitios web públicos, repositorios GitHub autorizados y archivos propios. La estructura del editor y HyperFrames se conserva; el cambio añade adaptadores de fuentes, planificación de guiones y una canalización de render controlada. Consultar `docs/arquitectura/REORIENTACION_7_0.md` y `docs/implementacion/RUTA_REESTRUCTURACION_7_0.md`.
+
+Siguiente etapa vigente: **7.1 - Entrada de solicitudes y asistente de creación**. Los criterios pendientes de la fase 6.2 no se consideran aprobados y permanecen como condiciones de calidad para 7.5-7.7.
