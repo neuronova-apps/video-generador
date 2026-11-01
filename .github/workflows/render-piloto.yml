@@ -1,0 +1,38 @@
+name: Render piloto fase 1
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Preparar FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Instalar dependencias
+        run: npm install --no-audit --no-fund
+      - name: Validar entorno
+        run: npm run check:render-env
+      - name: Comprobar composición
+        working-directory: examples/video-piloto
+        run: ../../node_modules/.bin/hyperframes lint
+      - name: Renderizar video piloto
+        working-directory: examples/video-piloto
+        run: ../../node_modules/.bin/hyperframes render
+      - name: Validar archivo MP4
+        run: |
+          find examples/video-piloto -name '*.mp4' -type f -print
+          VIDEO=$(find examples/video-piloto -name '*.mp4' -type f | head -n 1)
+          test -n "$VIDEO"
+          node scripts/verify-mp4.mjs "$VIDEO"
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: video-piloto-fase-1
+          path: examples/video-piloto/**/*.mp4
+          if-no-files-found: error
