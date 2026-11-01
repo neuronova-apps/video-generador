@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {visualScene,visualStyles} from '../scripts/visual-compositor-v8.mjs';
+test('compositor 8 presenta interfaz con resaltado y movimiento',()=>{const s=visualScene({title:'Buscador',narration:'Buscar pictogramas',duration:9,sourceUrl:'https://example.com',imageData:'data:image/png;base64,AAAA'},1,9);assert.match(s,/browser-shell/);assert.match(s,/spotlight/);assert.match(s,/cursor-arrow/);assert.match(s,/data-start="9"/);});
+test('composición sin imagen no finge una captura',()=>{const s=visualScene({title:'Resumen',narration:'Introducción',duration:8},0,0);assert.match(s,/feature-visual/);assert.doesNotMatch(s,/ui-shot/);});
+test('estilos definen desplazamientos visibles',()=>{assert.match(visualStyles(),/@keyframes focusTravel/);assert.match(visualStyles(),/@keyframes cameraReveal/);});
