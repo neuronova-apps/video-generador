@@ -13,6 +13,7 @@
     "verify:mp4": "node scripts/verify-mp4.mjs"
   },
   "dependencies": {
-    "hyperframes": "0.8.225"
+    "hyperframes": "0.8.225",
+    "playwright": "1.56.1"
   }
 }
