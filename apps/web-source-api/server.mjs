@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {analyzeGitHubRepo} from './github.mjs';
 import {lookup} from 'node:dns/promises';
 import {isIP} from 'node:net';
 import {analyzePublicPage,validatePublicUrl,isPublicAddress} from './source.mjs';
@@ -9,13 +10,13 @@ if(!Number.isInteger(port)||port<1||port>65535)throw Error('Puerto no válido');
 const limit=4096;let processing=false;
 function respond(res,status,data,requestOrigin){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...(requestOrigin===origin?{'Access-Control-Allow-Origin':origin,'Vary':'Origin'}:{})});res.end(JSON.stringify(data));}
 const server=http.createServer(async(req,res)=>{const supplied=req.headers.origin;if(supplied&&supplied!==origin){respond(res,403,{error:'Origen denegado'},supplied);return;}
-if(req.method==='OPTIONS'&&req.url==='/api/web/analyze'){res.writeHead(204,{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type','Access-Control-Max-Age':'300'});res.end();return;}
-if(req.method!=='POST'||req.url!=='/api/web/analyze'){respond(res,404,{error:'Ruta desconocida'},supplied);return;}
+if(req.method==='OPTIONS'&&(req.url==='/api/web/analyze'||req.url==='/api/github/analyze')){res.writeHead(204,{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type','Access-Control-Max-Age':'300'});res.end();return;}
+if(req.method!=='POST'||!['/api/web/analyze','/api/github/analyze'].includes(req.url)){respond(res,404,{error:'Ruta desconocida'},supplied);return;}
 if(processing){respond(res,429,{error:'Analizador ocupado'},supplied);return;}
 processing=true;
 try{let raw='';for await(const chunk of req){raw+=chunk.toString();if(raw.length>limit)throw Error('Solicitud demasiado grande');}
 const input=JSON.parse(raw);if(typeof input.url!=='string')throw Error('URL requerida');
-const result=await analyzePublicPage(input.url,{lookup,fetchImpl:fetch});respond(res,200,result,supplied);
+const result=req.url==='/api/github/analyze'?await analyzeGitHubRepo(input.url):await analyzePublicPage(input.url,{lookup,fetchImpl:fetch});respond(res,200,result,supplied);
 }catch(err){respond(res,422,{error:err.message},supplied);}finally{processing=false;}
 });
 server.requestTimeout=8000;server.listen(port,'127.0.0.1',()=>console.log('Web source API local: '+port));
