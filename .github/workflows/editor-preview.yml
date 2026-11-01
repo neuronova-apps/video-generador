@@ -1,0 +1,28 @@
+name: Validación y paquete web del editor
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'apps/editor-web/**'
+      - '.github/workflows/editor-preview.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  web-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+      - name: Preparar archivos estáticos
+        run: |
+          mkdir -p dist/editor
+          cp apps/editor-web/index.html apps/editor-web/styles.css apps/editor-web/editor.js apps/editor-web/model.js dist/editor/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: editor-web-preview
+          path: dist/editor/
+          if-no-files-found: error
