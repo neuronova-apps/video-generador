@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "request": {
+    "name": "Piloto NN",
+    "source": "web",
+    "url": "https://example.com",
+    "duration": 10,
+    "aspect": "16:9"
+  },
+  "title": "Piloto NN con evidencia",
+  "aspect": "16:9",
+  "duration": 10,
+  "sourceEvidence": true,
+  "sourceCommit": null,
+  "scenes": [
+    {
+      "id": "scene-1",
+      "title": "Presentación del proyecto",
+      "narration": "Información de prueba atribuida a una fuente de ejemplo.",
+      "visualSuggestion": "Gráfico de presentación",
+      "duration": 5,
+      "sourceUrl": "https://example.com",
+      "status": "draft"
+    },
+    {
+      "id": "scene-2",
+      "title": "Recursos y posibilidades",
+      "narration": "Revisar los recursos disponibles antes de publicar el video.",
+      "visualSuggestion": "Tarjeta de recursos",
+      "duration": 5,
+      "sourceUrl": "https://example.com",
+      "status": "draft"
+    }
+  ],
+  "approval": "approved-by-user",
+  "warnings": [
+    "Fixture sintético, no implica aprobación de usuario real"
+  ]
+}
