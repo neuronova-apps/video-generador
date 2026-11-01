@@ -1,0 +1,31 @@
+name: Trabajo storyboard fase 7.6
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'scripts/render-storyboard-job.mjs'
+      - '.github/workflows/storyboard-job.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  job:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      - run: node scripts/render-storyboard-job.mjs examples/storyboard-piloto/storyboard.json output/jobs
+      - run: |
+          ls -la output/jobs
+          test "$(find output/jobs -name '*.mp4' | wc -l)" -eq 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: storyboard-job-7-6
+          path: output/jobs/
+          if-no-files-found: error
