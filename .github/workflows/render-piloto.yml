@@ -1,6 +1,14 @@
 name: Render piloto fase 1
 on:
   workflow_dispatch:
+  push:
+    branches: [develop]
+    paths:
+      - 'examples/video-piloto/**'
+      - 'scripts/check-render-env.mjs'
+      - 'scripts/verify-mp4.mjs'
+      - 'package.json'
+      - '.github/workflows/render-piloto.yml'
 permissions:
   contents: read
 jobs:
