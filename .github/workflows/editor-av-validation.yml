@@ -1,0 +1,44 @@
+name: Integración audiovisual fase 6.1
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'scripts/build-editor-composition.mjs'
+      - 'scripts/make-av-fixture.mjs'
+      - '.github/workflows/editor-av-validation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      - run: node scripts/make-av-fixture.mjs
+      - run: node scripts/build-editor-composition.mjs examples/editor-av-piloto/project.json examples/editor-av-piloto/render
+      - name: Lint audiovisual
+        working-directory: examples/editor-av-piloto/render
+        run: ../../../node_modules/.bin/hyperframes lint
+      - name: Render audiovisual
+        working-directory: examples/editor-av-piloto/render
+        run: ../../../node_modules/.bin/hyperframes render
+      - name: Verificar MP4
+        run: |
+          F=$(find examples/editor-av-piloto/render -type f -name '*.mp4' | head -n1)
+          test -n "$F"
+          ffprobe -v error -show_entries format=duration:stream=codec_type -of json "$F"
+          ffprobe -v error -select_streams a -show_entries stream=codec_type -of csv=p=0 "$F" | grep audio
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: fase-6-1-audiovisual
+          path: examples/editor-av-piloto/render/**/*.mp4
+          if-no-files-found: error
