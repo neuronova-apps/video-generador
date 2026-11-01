@@ -1,0 +1,10 @@
+export function buildStoryboard(request,source=null){
+ if(!request||!Number.isInteger(request.duration)||request.duration<5||request.duration>600)throw Error('Solicitud inválida');
+ const title=(source?.structured?.title||source?.repository||source?.title||request.name).slice(0,120);
+ const facts=source?.source==='github'?[source.description,...(source.readmeSummary||[])].filter(Boolean):source?.source==='web'?[source.structured?.overview,...(source.structured?.paragraphs||[])].filter(Boolean):[];
+ const hasEvidence=facts.length>0;const n=Math.min(6,Math.max(1,Math.floor(request.duration/8)));
+ const base=Math.floor(request.duration/n),remainder=request.duration%n;
+ const scenes=Array.from({length:n},(_,i)=>({id:'scene-'+(i+1),title:i===0?title:(source?.structured?.headings?.[i-1]?.text||source?.readmeHeadings?.[i-1]||'Escena '+(i+1)).slice(0,120),narration:hasEvidence?(facts[Math.min(i,facts.length-1)]||''): 'Pendiente de redactar y verificar contenido audiovisual.',visualSuggestion:'Revisar o adjuntar un recurso visual correspondiente',duration:base+(i<remainder?1:0),sourceUrl:source?.url||source?.readmeUrl||request.url||'',status:'draft'}));
+ return{schemaVersion:1,request:{...request},title,aspect:request.aspect,duration:request.duration,sourceEvidence:hasEvidence,sourceCommit:source?.commitSha||null,scenes,approval:'pending',warnings:hasEvidence?['Las afirmaciones proceden de la fuente y requieren revisión humana.']:['No hay evidencia documental suficiente; el guion contiene marcadores de posición.']};
+}
+export function validateStoryboard(s){if(!s||s.schemaVersion!==1||!Array.isArray(s.scenes)||s.scenes.length<1||s.scenes.length>30||!Number.isInteger(s.duration)||s.duration<5||s.duration>600)throw Error('Storyboard inválido');let total=0;for(const x of s.scenes){if(typeof x.title!=='string'||x.title.length>120||typeof x.narration!=='string'||x.narration.length>2500||typeof x.visualSuggestion!=='string'||x.visualSuggestion.length>500||!Number.isInteger(x.duration)||x.duration<1)throw Error('Escena inválida');total+=x.duration;}if(total!==s.duration)throw Error('La duración de escenas no coincide');return s;}
