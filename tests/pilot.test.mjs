@@ -1,2 +1,2 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
-test('piloto tiene tres escenas de cinco segundos',()=>{const s=readFileSync('examples/video-piloto/index.html','utf8');assert.equal((s.match(/class="scene"/g)||[]).length,3);assert.equal((s.match(/data-duration="5"/g)||[]).length,3);assert.match(s,/data-duration="15"/);assert.match(s,/data-width="1280"/);});
+test('piloto tiene tres escenas de cinco segundos',()=>{const s=readFileSync('examples/video-piloto/index.html','utf8');assert.equal((s.match(/class="scene clip"/g)||[]).length,3);assert.equal((s.match(/data-duration="5"/g)||[]).length,3);assert.match(s,/data-duration="15"/);assert.match(s,/data-width="1280"/);});
