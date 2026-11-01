@@ -2,12 +2,17 @@
   "name": "video-generador-nn",
   "version": "0.0.0",
   "private": true,
-  "description": "Base arquitectónica para Video Generador de NeuroNova Apps",
+  "description": "Piloto de producción audiovisual HyperFrames para NeuroNova Apps",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
     "check:structure": "node scripts/check-structure.mjs",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "check:render-env": "node scripts/check-render-env.mjs",
+    "verify:mp4": "node scripts/verify-mp4.mjs"
+  },
+  "dependencies": {
+    "hyperframes": "0.8.225"
   }
 }
