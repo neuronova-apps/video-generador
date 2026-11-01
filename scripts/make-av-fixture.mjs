@@ -1,0 +1,10 @@
+import {writeFile,mkdir} from 'node:fs/promises';import {spawnSync} from 'node:child_process';
+const out='examples/editor-av-piloto';await mkdir(out,{recursive:true});
+const wave=spawnSync('ffmpeg',['-y','-f','lavfi','-i','sine=frequency=440:sample_rate=44100','-t','3','-c:a','pcm_s16le',out+'/tone.wav'],{encoding:'utf8'});
+if(wave.status!==0)throw Error('FFmpeg no pudo crear la señal de prueba: '+wave.stderr.slice(-500));
+const wav=await import('node:fs/promises').then(x=>x.readFile(out+'/tone.wav'));
+const svg='<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720"><rect width="1280" height="720" fill="#145d78"/><circle cx="640" cy="360" r="160" fill="#eea23e"/></svg>';
+const p={schemaVersion:1,name:'Piloto audiovisual',scenes:[{id:'av1',title:'Prueba audiovisual',subtitle:'Imagen y tono',duration:3,color:'#123456',imageId:'image1',videoId:'',audioId:'audio1',caption:'Audio de prueba',transition:'none',animation:'none'}]};
+const pack={format:'nn-video-portable-v1',project:p,media:{image1:{name:'test.svg',type:'image/png',data:''},audio1:{name:'tone.wav',type:'audio/wav',data:'data:audio/wav;base64,'+wav.toString('base64')}}};
+const png=spawnSync('ffmpeg',['-y','-f','lavfi','-i','color=c=blue:s=1280x720','-frames:v','1',out+'/image.png'],{encoding:'utf8'});if(png.status!==0)throw Error('No se creó imagen');const im=await import('node:fs/promises').then(x=>x.readFile(out+'/image.png'));pack.media.image1={name:'image.png',type:'image/png',data:'data:image/png;base64,'+im.toString('base64')};
+await writeFile(out+'/project.json',JSON.stringify(pack));console.log('Fixture creada');
