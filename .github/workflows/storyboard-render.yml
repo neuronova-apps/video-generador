@@ -1,0 +1,48 @@
+name: Render storyboard fase 7.5
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'scripts/build-storyboard-composition.mjs'
+      - 'examples/storyboard-piloto/**'
+      - '.github/workflows/storyboard-render.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  storyboard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+      - run: node scripts/build-storyboard-composition.mjs examples/storyboard-piloto/storyboard.json examples/storyboard-piloto/render
+      - name: Validación HyperFrames
+        working-directory: examples/storyboard-piloto/render
+        run: ../../../node_modules/.bin/hyperframes lint
+      - name: Render MP4
+        working-directory: examples/storyboard-piloto/render
+        run: ../../../node_modules/.bin/hyperframes render
+      - name: Verificar video
+        run: |
+          F=$(find examples/storyboard-piloto/render -type f -name '*.mp4' | head -n 1)
+          test -n "$F"
+          node - "$F" <<'NODE'
+          const {spawnSync}=require('node:child_process');
+          const f=process.argv[2];
+          const p=spawnSync('ffprobe',['-v','error','-show_entries','format=duration:stream=codec_type,width,height','-of','json',f],{encoding:'utf8'});
+          if(p.status!==0)process.exit(1);
+          const v=JSON.parse(p.stdout),track=v.streams.find(x=>x.codec_type==='video');
+          if(!track||track.width!==1280||track.height!==720||Math.abs(Number(v.format.duration)-10)>.5)process.exit(1);
+          console.log('MP4 conforme:',v.format.duration,'s');
+          NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: piloto-storyboard-7-5
+          path: examples/storyboard-piloto/render/**/*.mp4
+          if-no-files-found: error
