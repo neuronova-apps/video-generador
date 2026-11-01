@@ -17,7 +17,7 @@ if(processing){respond(res,429,{error:'Analizador ocupado'},supplied);return;}
 processing=true;
 try{let raw='';for await(const chunk of req){raw+=chunk.toString();if(raw.length>limit)throw Error('Solicitud demasiado grande');}
 const input=JSON.parse(raw);if(typeof input.url!=='string')throw Error('URL requerida');
-const result=req.url==='/api/web/capture'?await captureWithPlaywright(input.url):req.url==='/api/github/analyze'?await analyzeGitHubRepo(input.url):await analyzePublicPage(input.url,{lookup,fetchImpl:fetch});respond(res,200,result,supplied);
+const result=req.url==='/api/web/capture'?await captureWithPlaywright(input.url,input.sceneIndex??0):req.url==='/api/github/analyze'?await analyzeGitHubRepo(input.url):await analyzePublicPage(input.url,{lookup,fetchImpl:fetch});respond(res,200,result,supplied);
 }catch(err){respond(res,422,{error:err.message},supplied);}finally{processing=false;}
 });
 server.requestTimeout=8000;server.listen(port,'127.0.0.1',()=>console.log('Web source API local: '+port));
